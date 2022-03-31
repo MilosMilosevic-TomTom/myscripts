@@ -16,6 +16,7 @@ GEOMETRIES = "{http://www.tomtom.com/service/tis/location/geometries/1.6}"
 
 ACCESS_RESTRICTED_TAG = NAMESPACE+'accessibilityType'
 BRANDS_TAG = NAMESPACE+'brands'
+CATEGORY_ID_TAG = NAMESPACE+'categoryId'
 CHARGING_PARK_TAG = NAMESPACE+'chargingPark'
 CHARGING_POINTS_TAG = NAMESPACE+'chargingPoints'
 CHARGING_POINT_TAG = NAMESPACE+'chargingPoint'
@@ -55,6 +56,8 @@ def setup_parser():
     help="Exctract only given uuids")
   parser.add_argument("--exclude_restricted", action='store_true',
     help="Filter out restircted charging stations")
+  parser.add_argument("--category_ids_analytics", nargs="*", type=str, default=None,
+    help="List of category ids to count, none means count any")
 
   return parser.parse_args()
 
@@ -154,13 +157,19 @@ desired_plug_types = args.plug_types
 desired_proximity = args.proximity
 desired_uuids = args.uuids
 exclude_restricted = args.exclude_restricted
+desired_category_ids = args.category_ids_analytics
 different_brands = set()
+different_category_ids = set()
 
 feed = ET.parse(input_file_name).getroot()
 
 ##### Filter charging stations #####
 
 filtered_charging_parks = []
+category_ids_found = 0
+category_ids_missed = 0
+category_ids_blank = 0
+
 for charging_park in feed.findall(CHARGING_PARK_TAG):
   # List of charging brands compatible with preferred brand
   brands_desc = ""
@@ -215,6 +224,18 @@ for charging_park in feed.findall(CHARGING_PARK_TAG):
     if rated_power is not None and float(rated_power.text) > max_power:
       max_power = float(rated_power.text)
 
+  if desired_category_ids != None:
+    category_id = charging_park.find(CATEGORY_ID_TAG)
+    if category_id != None:
+      if category_id.text not in different_category_ids:
+        different_category_ids.add(category_id.text)
+      if category_id.text in desired_category_ids:
+        category_ids_found += 1
+      else:
+        category_ids_missed += 1
+    else:
+      category_ids_blank += 1
+
   # Save the data for later
   ET.SubElement(charging_park, "description").text = description
   ET.SubElement(charging_park, "brands_desc").text = brands_desc
@@ -227,6 +248,11 @@ print("Extracted " + str(len(filtered_charging_parks)) + " charging parks")
 if len(different_brands) != 0:
   print("Different brands are:")
   print(different_brands)
+if desired_category_ids != None:
+  print("Category id analysis:")
+  print("Desired ids: " + str(desired_category_ids))
+  print("found: {0}, missed: {1}, blank: {2}".format(category_ids_found, category_ids_missed, category_ids_blank))
+  print("unique are: " + str(different_category_ids))
 
 ##### Generate kml file #####
 
