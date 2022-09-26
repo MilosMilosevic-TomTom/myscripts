@@ -11,7 +11,7 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup
 
-# Outputs the result in csv file.
+# Outputs the result in csv file. VPN connection required, in order to access BB.
 #
 # Examples to call ./pr_cycletime.py --url https://bitbucket.tomtomgroup.com
 #                   --username milosevi --password $BB_PASS --project NavKit2
