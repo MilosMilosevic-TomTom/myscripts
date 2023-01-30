@@ -60,8 +60,10 @@ for line in input_file:
 if use_timeline:
   dates = matplotlib.dates.date2num(xpoints)
   plt.plot_date(dates, ypoints)
-  plt.show()
 else:
   plt.plot(range(steps), ypoints)
-  plt.show()
 
+plt.xlabel(f"Timestamp")
+plt.ylabel(f"Charge [kWh]")
+plt.title(f"Esotrace battery charge over time")
+plt.show()
