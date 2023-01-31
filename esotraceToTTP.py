@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-PATTERN_PHRASE = "Track.MockIntent"
+PATTERN_PHRASE = "Track.ServicePositioning"
 
 
 def process_MM_line(line, step):
@@ -13,7 +13,7 @@ def process_MM_line(line, step):
     hdg = line[line.find("hdg=") + 4: line.find(", v=")]
     v = line[line.find("v=") + 2: line.find(" m/s")]
 
-    return "{},245,{},{},0,{},{},10,{}\n".format(step, lon, lat, hdg, v, step)
+    return "{},245,{},{},0,{},{},10,{}\n".format(step, lon, lat, hdg, v if (v != "nan") else "0", step)
 
 
 def setup_parser():

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import argparse
 import json
 import math
@@ -26,10 +26,12 @@ CONNECTOR_TAG = NAMESPACE+'connector'
 CONNECTORS_TAG = NAMESPACE+'connectors'
 CURRENT_TAG = NAMESPACE+'current'
 CURRENT_TYPE_TAG = NAMESPACE+'currentType'
+ENTRY_LOCATION_TAG = GEOMETRIES+'entryLocation'
 LOCATIONS_TAG = NAMESPACE+'locations'
 LONGITUDE_TAG = PRIMITIVES+'longitude'
 LATITUDE_TAG = PRIMITIVES+'latitude'
 METHOD_TAG = NAMESPACE+'method'
+NAME_TAG = NAMESPACE+'name'
 PAYMENT_OPTIONS_TAG = NAMESPACE+'paymentOptions'
 PAYMENT_OPTION_TAG = NAMESPACE+'paymentOption'
 POINT_LOCATION_TAG = GEOMETRIES+'pointLocation'
@@ -58,6 +60,8 @@ def setup_parser():
     help="Filter out restircted charging stations")
   parser.add_argument("--category_ids_analytics", nargs="*", type=str, default=None,
     help="List of category ids to count, none means count any")
+  parser.add_argument("--points_distance", type=float, default=.0,
+    help="Minimal distance between navigable coordinate and POI coordinate")
 
   return parser.parse_args()
 
@@ -117,6 +121,7 @@ def generate_description_for_connector(connector):
 
 def generate_description_for_charging_park(charging_park, compatible_connectors):
   description = "Charging park: " + charging_park.find(UUID_TAG).text + "\n"
+  description = description + "Name: " + charging_park.find(PROPERTIES_TAG).find(NAME_TAG).text + "\n"
   charging_stations = charging_park.find(CHARGING_STATIONS_TAG).findall(CHARGING_STATION_TAG)
   for charging_station in charging_stations:
     description += "\n----\nCharging station: " + charging_station.find(UUID_TAG).text + "\n"
@@ -131,17 +136,20 @@ def generate_description_for_charging_park(charging_park, compatible_connectors)
         description += generate_description_for_connector(connector) + "\n"
   return description
 
-def in_within_proximity(latitude, longitude, desired_proximity):
+def calculate_distance(latitude1, longitude1, latitude2, longitude2):
+  lat1 = math.radians(latitude1)
+  long1 = math.radians(longitude1)
+  lat2 = math.radians(latitude2)
+  long2 = math.radians(longitude2)
   R = 6371
-  lat1 = math.radians(latitude)
-  long1 = math.radians(longitude)
-  lat2 = math.radians(desired_proximity[0])
-  long2 = math.radians(desired_proximity[1])
   dlat = lat1 - lat2
   dlong = long1 - long2
   a = math.sin(dlat/2)*math.sin(dlat/2) + math.cos(lat1)*math.cos(lat2) * math.sin(dlong/2)*math.sin(dlong/2)
   c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-  dist = R * c
+  return R * c
+
+def in_within_proximity(latitude, longitude, desired_proximity):
+  dist = calculate_distance(latitude, longitude, desired_proximity[0], desired_proximity[1])
   return dist < desired_proximity[2]
 
 #################### Main ####################
@@ -160,6 +168,7 @@ exclude_restricted = args.exclude_restricted
 desired_category_ids = args.category_ids_analytics
 different_brands = set()
 different_category_ids = set()
+points_distance = args.points_distance
 
 feed = ET.parse(input_file_name).getroot()
 
@@ -212,6 +221,21 @@ for charging_park in feed.findall(CHARGING_PARK_TAG):
       continue
   else:
     compatible_connectors = get_all_connectors(charging_park, exclude_restricted)
+
+  # If the distance between entry point location and POI location is smaller than desired, skip the charging park
+  if points_distance != .0:
+    if charging_park.find(LOCATIONS_TAG).find(ENTRY_LOCATION_TAG) == None:
+      continue
+    entry_location = charging_park.find(LOCATIONS_TAG).find(ENTRY_LOCATION_TAG)
+    entry_latitude = float(entry_location.find(LATITUDE_TAG).text)
+    entry_longitude = float(entry_location.find(LONGITUDE_TAG).text)
+    entry_coordinates = "{0},{1},0".format(entry_longitude, entry_latitude)
+
+    dist = calculate_distance(latitude, longitude, entry_latitude, entry_longitude)
+
+    if dist < points_distance:
+      continue
+    ET.SubElement(charging_park, "entry").text = entry_coordinates
 
   # If there is no compatible connector, skip the charging park
   if len(compatible_connectors) == 0:
@@ -288,6 +312,13 @@ for filtered_charging_park in filtered_charging_parks:
                                 filtered_charging_park.find('brands_desc').text)
   ET.SubElement(placemark, "description").text = filtered_charging_park.find('description').text
   ET.SubElement(placemark, "name").text = name
+
+  if points_distance != .0:
+    placemark = ET.SubElement(document, "Placemark")
+    point = ET.SubElement(placemark, "Point")
+    ET.SubElement(point, "coordinates").text = filtered_charging_park.find('entry').text
+    ET.SubElement(placemark, "name").text = "entry"
+
 
 tree = ET.ElementTree(kml)
 xmlstr = minidom.parseString(ET.tostring(kml)).toprettyxml(indent="  ")
