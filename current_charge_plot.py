@@ -63,6 +63,11 @@ if use_timeline:
 else:
   plt.plot(range(steps), ypoints)
 
+if use_timeline:
+  ax = plt.gca()
+  myFmt = matplotlib.dates.DateFormatter('%H:%M:%S')
+  ax.xaxis.set_major_formatter(myFmt)
+
 plt.xlabel(f"Timestamp")
 plt.ylabel(f"Charge [kWh]")
 plt.title(f"Esotrace battery charge over time")
