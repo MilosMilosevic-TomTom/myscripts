@@ -62,6 +62,8 @@ def setup_parser():
     help="List of category ids to count, none means count any")
   parser.add_argument("--points_distance", type=float, default=.0,
     help="Minimal distance between navigable coordinate and POI coordinate")
+  parser.add_argument("--min_power", type=float, default=.0,
+    help="Minimal power for a charing station to be considered")
 
   return parser.parse_args()
 
@@ -169,6 +171,7 @@ desired_category_ids = args.category_ids_analytics
 different_brands = set()
 different_category_ids = set()
 points_distance = args.points_distance
+min_power = args.min_power
 
 feed = ET.parse(input_file_name).getroot()
 
@@ -241,12 +244,18 @@ for charging_park in feed.findall(CHARGING_PARK_TAG):
   if len(compatible_connectors) == 0:
     continue
 
-  # Generate description
-  description = generate_description_for_charging_park(charging_park, compatible_connectors)
+  # Calculate max power
   for connector in compatible_connectors:
     rated_power = connector.find(RATED_POWER_TAG)
     if rated_power is not None and float(rated_power.text) > max_power:
       max_power = float(rated_power.text)
+
+  # Filter out chargers which are "weaker" than min_power
+  if max_power < min_power:
+    continue
+
+  # Generate description
+  description = generate_description_for_charging_park(charging_park, compatible_connectors)
 
   if desired_category_ids != None:
     category_id = charging_park.find(CATEGORY_ID_TAG)
