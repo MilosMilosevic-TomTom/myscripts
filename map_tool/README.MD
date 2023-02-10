@@ -6,9 +6,9 @@ Program allows to copy some data as C++ arrays to make tests for navkit-2.
 
 Recognized array names:
 
-Next 3 are polylines expressed as lat / lon (can use "latitude", "longitude" too):
+Next 3 are polylines expressed as lat / lng (can use "latitude", "longitude" too):
 
-sourcePolyline = [{lat: 1., lon: 2.}, ]
+sourcePolyline = [{lat: 1., lng: 2.}, ]
 (AKA onlinePolyline)
 
 targetPolyline
