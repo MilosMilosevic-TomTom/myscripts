@@ -1,0 +1,12 @@
+data/CMakeLists.txt.user.i
+data/main.qml.i
+data/mainqml.h.i
+data/qtquickcontrols2.conf.i
+data/main.cpp.i
+data/mainqml.cpp.i
+data/qml.qrc.i
+data/CMakeLists.txt.i
+data/map_group.qml.i
+data/map_label.qml.i
+data/TheLine.qml.i
+data/JoinsCollection.qml.i
