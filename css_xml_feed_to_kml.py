@@ -64,6 +64,7 @@ def setup_parser():
     help="Minimal distance between navigable coordinate and POI coordinate")
   parser.add_argument("--min_power", type=float, default=.0,
     help="Minimal power for a charing station to be considered")
+  parser.add_argument("--output", type=str, help="Path to output file")
 
   return parser.parse_args()
 
@@ -160,7 +161,7 @@ args = setup_parser()
 
 input_file_name = args.feed_xml_file
 input_file = open(input_file_name, "r")
-output_file_name = input_file_name.replace(".xml", ".kml")
+output_file_name = input_file_name.replace(".xml", ".kml") if args.output == None else args.output
 
 desired_brands = args.brands
 desired_plug_types = args.plug_types
