@@ -25,8 +25,9 @@ PLAN_TRIP_RESPONSE = 'Plan Trip response: id '
 DELTE_TRIP_REQUEST = 'Delete Trip request: id '
 DELETE_TRIP_RESPONSE = ' Delete Trip response: id '
 START_NAVIGATION_REQUEST = 'Start Navigation request: id '
-CANCEL_TRIP_PLANNING_REQUEST = 'Cancel Trip planning requested ??????'
 
+# for the futures
+CANCEL_TRIP_PLANNING_REQUEST = 'Cancel Trip planning requested ??????'
 # errors
 PROTOBUF_CHANNEL_INTERUPTED_ERR = 'Protobuf channel interrupted'
 
@@ -64,7 +65,6 @@ crash_skips = 0
 backtrace_step = -1
 
 trip_data = {}
-current_trip = None
 
 for line in input_file:
   try:
@@ -128,26 +128,28 @@ for line in input_file:
 
   # Plan trip staff
   if PLAN_TRIP_REQUEST in line:
-    assert current_trip == None
-    current_trip = EMPTY_TRIP
-    current_trip['created'] = get_tracetime(line)
-    current_trip['id'] = get_tid(line, PLAN_TRIP_REQUEST)
-    current_trip['plan'] = line[line.find('TripPlan'):]
+    tid = get_tid(line, PLAN_TRIP_REQUEST)
+    assert tid not in trip_data
+    new_trip = EMPTY_TRIP
+    new_trip['id'] = tid
+    new_trip['created'] = get_tracetime(line)
+    new_trip['id'] = tid
+    new_trip['plan'] = line[line.find('TripPlan'):]
+    trip_data[tid] = new_trip.copy()
+
     continue
 
   if START_NAVIGATION_REQUEST in line:
-    assert current_trip != None
-    assert get_tid(line, START_NAVIGATION_REQUEST) == current_trip['id']
-    current_trip['navigated'] = get_tracetime(line)
+    tid =  get_tid(line, START_NAVIGATION_REQUEST)
+    assert tid in trip_data
+    trip_data[tid]['navigated'] = get_tracetime(line)
     continue
 
 
   if DELETE_TRIP_RESPONSE in line:
-    assert current_trip != None
-    assert get_tid(line, DELETE_TRIP_RESPONSE) == current_trip['id']
-    current_trip['deleted'] = get_tracetime(line)
-    trip_data[current_trip['id']] = current_trip.copy()
-    current_trip = None
+    tid = get_tid(line, DELETE_TRIP_RESPONSE)
+    assert tid in trip_data
+    trip_data[tid]['deleted'] = get_tracetime(line)
     continue
 
 for tid, trip in trip_data.items():
@@ -159,8 +161,8 @@ for tid, trip in trip_data.items():
       labels.append('{0:%H:%m:%s}\n{1}'.format(trip.get(key), key))
       dates.append(trip.get(key))
 
-  min_date = np.min(dates) - timedelta(hours=0, minutes=1)
-  max_date = np.max(dates) + timedelta(hours=0, minutes=1)
+  min_date = np.min(dates) - timedelta(seconds=15)
+  max_date = np.max(dates) + timedelta(seconds=15)
 
   fig, ax = plt.subplots(figsize=(15, 4), constrained_layout=True)
   _ = ax.set_ylim(-2, 1.75)
