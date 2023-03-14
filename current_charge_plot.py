@@ -7,7 +7,7 @@ import re
 
 from datetime import datetime
 
-UPDATE_VEHICLE_REGEX = r'onVehicleParametersUpdate.*currentChargeInKwh'
+UPDATE_VEHICLE_REGEX = r'VehicleServiceProto::updateVehicle()'
 DATATIME_FORMAT = '%d.%m.%Y %H:%M:%S.%f'
 
 def setup_parser():
@@ -54,7 +54,7 @@ for line in input_file:
         use_timeline = False
     steps = steps + 1
 
-    charge = line[line.find('currentChargeInKwh" : "')+23:line.find('","maxChargeInKwh"')]
+    charge = line[line.find('current_charge_in_kwh: ')+23:line.find(' max_charge_in_kwh:')]
     ypoints.append(float(charge))
 
 if use_timeline:
