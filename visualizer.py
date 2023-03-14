@@ -38,11 +38,19 @@ def setup_parser():
     # Setup CLI arguments
     # autopep8: off
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, required=True, help='Input esotrace file name')
+    parser.add_argument('--input', type=str, required=True, help='Input esotrace file name')
     parser.add_argument('--start', type=float, required=False, default=0.0, help='Packed ID of the first message')
     parser.add_argument('--end', type=float, required=False, default=10000.0, help='Packet ID of the last message')
     return parser.parse_args()
     # autopep8: on
+
+def print_crashes_report(crashes):
+  print('Found {} crashes in {} different components'.format(np.sum([len(x) for _, x in crashes.items()]), len(crashes)))
+  for cmd, list_of_crashes in crashes.items():
+    print("\tComponent: {}", cmd)
+    for crash in list_of_crashes:
+      print("\t\tTimestamp: {}".format(crash['timestamp']))
+      print("\n" + crash['stacktrace'])
 
 def display_plots(trip_data):
   for tid, trip in trip_data.items():
@@ -112,7 +120,7 @@ input_file = open(args.input, "r")
 major_events = {}
 
 
-# {pid, tid, cmd, stacktrace, timestamp, uptime, tracetime}
+# {cmd: [{pid, tid, cmd, stacktrace, timestamp, uptime, tracetime}]}
 crashes = {}
 current_crash = None
 crash_skips = 0
@@ -216,4 +224,5 @@ for line in input_file:
       major_events['create_trip_sevice'] = [{'tracetime': ts, 'metadata': line}]
 
 # Parsing is done, display timelines
+print_crashes_report(crashes)
 display_plots(trip_data)
