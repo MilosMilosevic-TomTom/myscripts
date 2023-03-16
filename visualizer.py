@@ -52,6 +52,63 @@ def print_crashes_report(crashes):
       print("\t\tTimestamp: {}".format(crash['timestamp']))
       print("\n" + crash['stacktrace'])
 
+
+def display_major_events(major_events, crashes):
+  merged_events = []
+
+  for event_type, events in major_events.items():
+    for event in events:
+      merged_events.append([event['tracetime'], "Create trip service"])
+
+  for cmd, list_of_crashes in crashes.items():
+    for crash in list_of_crashes:
+      merged_events.append([crash['tracetime'], "Crash in {}".format(cmd)])
+
+  labels = []
+  dates = []
+
+  for event in merged_events:
+    labels.append('{0:%H:%m:%S}\n{1}'.format(event[0], event[1]))
+    dates.append(event[0])
+
+  min_date = np.min(dates) - timedelta(seconds=15)
+  max_date = np.max(dates) + timedelta(seconds=15)
+
+  fig, ax = plt.subplots(figsize=(15, 4), constrained_layout=True)
+  _ = ax.set_ylim(-2, 1.75)
+  _ = ax.set_xlim(min_date, max_date)
+  _ = ax.axhline(0, xmin=0.05, xmax=0.95, c='deeppink', zorder=1)
+
+  _ = ax.scatter(dates, np.zeros(len(dates)), s=120, c='palevioletred', zorder=2)
+  _ = ax.scatter(dates, np.zeros(len(dates)), s=30, c='darkmagenta', zorder=3)
+
+  label_offsets = np.zeros(len(dates))
+  label_offsets[::2] = 0.35
+  label_offsets[1::2] = -0.7
+  for i, (l, d) in enumerate(zip(labels, dates)):
+      _ = ax.text(d, label_offsets[i], l, ha='center', fontfamily='serif', fontweight='bold', color='royalblue',fontsize=12)
+
+  stems = np.zeros(len(dates))
+  stems[::2] = 0.3
+  stems[1::2] = -0.3
+  markerline, stemline, baseline = ax.stem(dates, stems, use_line_collection=True)
+  _ = plt.setp(markerline, marker=',', color='darkmagenta')
+  _ = plt.setp(stemline, color='darkmagenta')
+
+
+  # hide lines around chart
+  for spine in ["left", "top", "right", "bottom"]:
+      _ = ax.spines[spine].set_visible(False)
+
+  # hide tick labels
+  _ = ax.set_xticks([])
+  _ = ax.set_yticks([])
+
+  _ = ax.set_title('Major events', fontweight="bold", fontfamily='serif', fontsize=16,
+                   color='royalblue')
+
+  plt.show()
+
 def display_plots(trip_data):
   for tid, trip in trip_data.items():
     labels = []
@@ -59,7 +116,7 @@ def display_plots(trip_data):
 
     for key in ['created', 'navigated', 'deleted']:
       if trip.get(key) != None:
-        labels.append('{0:%H:%m:%s}\n{1}'.format(trip.get(key), key))
+        labels.append('{0:%H:%m:%S}\n{1}'.format(trip.get(key), key))
         dates.append(trip.get(key))
 
     min_date = np.min(dates) - timedelta(seconds=15)
@@ -119,7 +176,6 @@ input_file = open(args.input, "r")
 # {event_type: [{tracetime, metadata}]}
 major_events = {}
 
-
 # {cmd: [{pid, tid, cmd, stacktrace, timestamp, uptime, tracetime}]}
 crashes = {}
 current_crash = None
@@ -177,9 +233,9 @@ for line in input_file:
       crash_skips = crash_skips + 1
       if crash_skips == 20:
         try:
-          crashes[current_crash['cmd']].append(current_crash)
+          crashes[current_crash['cmd']].append(current_crash.copy())
         except KeyError:
-          crashes[current_crash['cmd']] = [current_crash]
+          crashes[current_crash['cmd']] = [current_crash.copy()]
         current_crash = None
         backtrace_step = -1
         crash_skips = 0
@@ -225,4 +281,5 @@ for line in input_file:
 
 # Parsing is done, display timelines
 print_crashes_report(crashes)
+display_major_events(major_events, crashes)
 display_plots(trip_data)
