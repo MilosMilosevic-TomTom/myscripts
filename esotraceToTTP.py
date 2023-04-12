@@ -2,9 +2,10 @@
 
 import argparse
 import math
+import re
 import sys
 
-PATTERN_PHRASE = "Track.MapMatched"
+PATTERN_PHRASE = [r"Track\.MapMatched", r"NullMapMatcherImpl.*OnFeedResult:timestamp"]
 
 
 def calculate_distance(latitude1, longitude1, latitude2, longitude2):
@@ -19,16 +20,29 @@ def calculate_distance(latitude1, longitude1, latitude2, longitude2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     return R * c * 1000
 
-def process_MM_line(line, last_coord = None):
-    ts_start = line.find("ts=")
-    pos_start = line.find("pos=(")
-    hdg_start = line.find("hdg=")
+def process_MM_line(line, method, last_coord = None):
 
-    ts = line[ts_start+3:pos_start-2]
-    pos = line[pos_start+5: hdg_start-3]
-    lat = float(pos[0: pos.find(",")])
-    lon = float(pos[pos.find(", ") + 2: -1])
-    hdg = line[hdg_start+4:line.find(",", hdg_start)]
+    if method == 0:
+        ts_start = line.find("ts=")
+        pos_start = line.find("pos=(")
+        hdg_start = line.find("hdg=")
+
+        ts = line[ts_start+3:pos_start-2]
+        pos = line[pos_start+5: hdg_start-3]
+        lat = float(pos[0: pos.find(",")])
+        lon = float(pos[pos.find(", ") + 2: -1])
+        hdg = line[hdg_start+4:line.find(",", hdg_start)]
+
+    elif method == 1:
+        ts_start = line.find("timestamp=")
+        lon_start = line.find(",raw longitude=")
+        lat_start = line.find(",raw latitude=")
+        lat_end = line.find(",on road=")
+
+        ts = line[ts_start+10:lon_start]
+        lon = float(line[lon_start+15:lat_start])
+        lat = float(line[lat_start+14:lat_end])
+        hdg = 0
 
     try:
         ts = float(ts)
@@ -58,11 +72,16 @@ def setup_parser():
     parser.add_argument('--start', type=float, required=False, default=0.0, help='Packed ID of the first message')
     parser.add_argument('--end', type=float, required=False, default=10000.0, help='Packet ID of the last message')
     parser.add_argument('--kml', action='store_true', dest='kml')
+    parser.add_argument('--phrase-index', type=int, default=0, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
     return parser.parse_args()
     # autopep8: on
 
 
 args = setup_parser()
+
+if args.phrase >= len(PATTERN_PHRASE):
+    print("Number of possible phrases is {}, the selected index {} is not possible".format(len(PATTERN_PHRASE), args.phrase))
+    exit()
 
 input_file = open(args.input, "r")
 output_file = open(args.output, "w")
@@ -79,7 +98,7 @@ current_step = 1
 struct = None
 
 for line in input_file:
-    if PATTERN_PHRASE in line:
+    if re.search(PATTERN_PHRASE[args.phrase], line):
 
         packet_id = float(line[0:line.find(" ")])
         if packet_id > args.end:
@@ -87,9 +106,11 @@ for line in input_file:
         if packet_id < args.start:
             continue
 
-        struct = process_MM_line(line, struct)
+        struct = process_MM_line(line, args.phrase, struct)
         output_file.write(output_klm(struct) if args.kml else output_ttp(struct, current_step))
         current_step = current_step + 1
 
 if args.kml:
     output_file.write('</coordinates>\n</LineString>\n</Placemark>\n</Document>\n</kml>')
+
+print("Extracted {} coordinates".format(current_step))
