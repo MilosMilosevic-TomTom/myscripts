@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -39,18 +40,24 @@ def setup_parser():
     # autopep8: off
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required=True, help='Input esotrace file name')
+    parser.add_argument('--crashes', type=str, required=False, default='', help='Output file for crashes')
     parser.add_argument('--start', type=float, required=False, default=0.0, help='Packed ID of the first message')
     parser.add_argument('--end', type=float, required=False, default=10000.0, help='Packet ID of the last message')
     return parser.parse_args()
     # autopep8: on
 
-def print_crashes_report(crashes):
-  print('Found {} crashes in {} different components'.format(np.sum([len(x) for _, x in crashes.items()]), len(crashes)))
+def print_crashes_report(crashes, file_name):
+  f = sys.stdout
+  if file_name != '':
+    f = open(file_name, 'w')
+
+  print('Found {} crashes in {} different components'.format(np.sum([len(x) for _, x in crashes.items()]), len(crashes)), file=f)
   for cmd, list_of_crashes in crashes.items():
-    print("\tComponent: {}", cmd)
+    print("\tComponent: {}".format(cmd), file=f)
     for crash in list_of_crashes:
-      print("\t\tTimestamp: {}".format(crash['timestamp']))
-      print("\n" + crash['stacktrace'])
+      print("\t\tTimestamp: {}".format(crash['timestamp']), file=f)
+      print("\n" + crash['stacktrace'], file=f)
+    print("\n", file = f)
 
 
 def display_major_events(major_events, crashes):
@@ -280,6 +287,6 @@ for line in input_file:
       major_events['create_trip_sevice'] = [{'tracetime': ts, 'metadata': line}]
 
 # Parsing is done, display timelines
-print_crashes_report(crashes)
+print_crashes_report(crashes, args.crashes)
 display_major_events(major_events, crashes)
 display_plots(trip_data)
