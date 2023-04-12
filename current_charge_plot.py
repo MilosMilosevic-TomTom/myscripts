@@ -54,8 +54,15 @@ for line in input_file:
         use_timeline = False
     steps = steps + 1
 
-    charge = line[line.find('current_charge_in_kwh: ')+23:line.find(' max_charge_in_kwh:')]
-    ypoints.append(float(charge))
+    try:
+      charge = line[line.find('current_charge_in_kwh: ')+23:line.find(' max_charge_in_kwh:')]
+      ypoints.append(float(charge))
+    except Exception as e:
+      print("Failed converting the string {} to float, dropping the update request".format(charge))
+      if len(xpoints) > 0:
+        xpoints.pop()
+      steps = steps - 1
+
 
 if use_timeline:
   dates = matplotlib.dates.date2num(xpoints)
