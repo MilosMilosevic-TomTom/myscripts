@@ -5,7 +5,9 @@ import math
 import re
 import sys
 
-PATTERN_PHRASE = [r"Track\.MapMatched", r"NullMapMatcherImpl.*OnFeedResult:timestamp"]
+PATTERN_PHRASE = [r"Track\.MapMatched",
+                  r"NullMapMatcherImpl.*OnFeedResult:timestamp",
+                  r"Called OnPredictionUpdate with PredictionUpdateResult:.*has raw position, location is \("]
 
 
 def calculate_distance(latitude1, longitude1, latitude2, longitude2):
@@ -44,6 +46,14 @@ def process_MM_line(line, method, last_coord = None):
         lat = float(line[lat_start+14:lat_end])
         hdg = 0
 
+    elif method == 2:
+        search = re.search(PATTERN_PHRASE[method], line)
+        raw = line[search.end():-2]
+        sep = raw.find(",")
+        lat = raw[0:sep]
+        lon = raw[sep+1:-1]
+        hdg = 0
+
     try:
         ts = float(ts)
     except Exception as e:
@@ -61,7 +71,7 @@ def output_ttp(struct, step):
     return "{},245,{},{},0,{},{},10,{}\n".format(step, struct[2], struct[1], struct[3], struct[4], step)
 
 def output_klm(struct):
-    return "{},{},0\n".format(struct[2], struct[1   ])
+    return "{},{},0\n".format(struct[2], struct[1])
 
 def setup_parser():
     # Setup CLI arguments
