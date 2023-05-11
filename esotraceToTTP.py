@@ -77,12 +77,12 @@ def setup_parser():
     # Setup CLI arguments
     # autopep8: off
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=str, required=True, help='Output TTP file name')
-    parser.add_argument("--input", type=str, required=True, help='Input esotrace file name')
-    parser.add_argument('--start', type=float, required=False, default=0.0, help='Packed ID of the first message')
-    parser.add_argument('--end', type=float, required=False, default=10000.0, help='Packet ID of the last message')
+    parser.add_argument("--output", '-o', type=str, required=True, help='Output TTP file name')
+    parser.add_argument("--input", '-i', type=str, required=True, help='Input esotrace file name')
+    parser.add_argument('--start', '-s', type=float, required=False, default=0.0, help='Packed ID of the first message')
+    parser.add_argument('--end', '-e', type=float, required=False, default=10000.0, help='Packet ID of the last message')
     parser.add_argument('--kml', action='store_true', dest='kml')
-    parser.add_argument('--phrase-index', type=int, default=0, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
+    parser.add_argument('--phrase-index', type=int, default=2, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
     return parser.parse_args()
     # autopep8: on
 
