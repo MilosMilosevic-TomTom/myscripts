@@ -16,7 +16,10 @@ def setup_parser():
 args = setup_parser()
 
 start = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><Folder><Folder><!-- route --><Folder><!-- leg --><Placemark><LineString><coordinates>'
-end = '</coordinates></LineString></Placemark></Folder></Folder></Folder></Document></kml>'
+close_line = '</coordinates></LineString></Placemark>'
+start_wp = '<Placemark><Point><coordinates>'
+end_wp = '</coordinates></Point></Placemark>'
+end = '</Folder></Folder></Folder></Document></kml>'
 
 with open(args.input) as json_file:
     data = json.load(json_file)
@@ -33,7 +36,7 @@ with open(args.input) as json_file:
     if args.leg > len(leg_limits) - 1:
         exit("Input file contains {} legs while requested leg is {}".format(len(leg_limits)-1, args.leg))
 
-    print(start,file=output_file)
+    print(start, file=output_file)
 
     try:
         for p in data["supportingPoints"][leg_limits[args.leg]:leg_limits[args.leg+1]]:
@@ -41,4 +44,11 @@ with open(args.input) as json_file:
     except KeyError as e:
         exit("Input file format wrong, key {} not found" + str(e))
 
-    print(end,file=output_file)
+    print(close_line, file=output_file)
+
+    for l in leg_limits[1:]:
+        print(start_wp, file=output_file)
+        print("{},{}".format(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"]), file=output_file)
+        print(end_wp, file=output_file)
+
+    print(end, file=output_file)
