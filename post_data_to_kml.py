@@ -9,7 +9,8 @@ def setup_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", '-o', type=str, required=True, help='Output KML file name')
     parser.add_argument("--input", '-i', type=str, required=True, help='Post data file')
-    parser.add_argument('--leg', '-l', type=int, default=-1, help='By default take all the legs')
+    parser.add_argument('--leg', '-l', type=int, default=-1, help='By default take all the legs, number is zero-based')
+    parser.add_argument('--mode', '-m', type=str, default="post", help='Switch between post data and response data')
     return parser.parse_args()
     # autopep8: on
 
@@ -34,14 +35,28 @@ with open(args.input) as json_file:
 
     leg_limits = [0]
 
-    try:
-        for w in data["pointWaypoints"]:
-            leg_limits.append(w["supportingPointIndex"])
-    except KeyError as e:
-        pass
+    if args.mode == "response":
+        points = []
+        try:
+            for leg in data["routes"][0]["legs"]:
+                points.extend(leg["points"])
+                leg_limits.append(leg_limits[-1] + len(leg["points"]) - 1)
+        except KeyError as e:
+            exit("Input file format wrong, key {} not found" + str(e))
 
-    if args.leg > len(leg_limits) - 1:
-        exit("Input file contains {} legs while requested leg is {}".format(len(leg_limits)-1, args.leg))
+        data["supportingPoints"] = points
+    elif args.mode == "post":
+        try:
+            for w in data["pointWaypoints"]:
+                leg_limits.append(w["supportingPointIndex"])
+            leg_limits.append(len(data["supportingPoints"]))
+        except KeyError as e:
+            pass
+    else:
+        exit("Unknown mode {}, supported modes are 'post' and 'response'".format(args.mode))
+
+    if args.leg > len(leg_limits) - 2:
+        exit("Input file contains {} legs while requested leg is {} (zero-based)".format(len(leg_limits)-1, args.leg))
 
     print(start, file=output_file)
 
@@ -62,7 +77,7 @@ with open(args.input) as json_file:
     print(add_pin(data["supportingPoints"][0]["longitude"], data["supportingPoints"][0]["latitude"], "Start"), file=output_file)
     print(add_pin(data["supportingPoints"][-1]["longitude"], data["supportingPoints"][-1]["latitude"], "End"), file=output_file)
 
-    for cnt, l in enumerate(leg_limits[1:]):
+    for cnt, l in enumerate(leg_limits[1:-1]):
         print(add_pin(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"], "Waypoint" + str(cnt+1)), file=output_file)
 
     print(end, file=output_file)
