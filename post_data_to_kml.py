@@ -39,7 +39,13 @@ with open(args.input) as json_file:
     print(start, file=output_file)
 
     try:
-        for p in data["supportingPoints"][leg_limits[args.leg]:leg_limits[args.leg+1]]:
+        if args.leg == -1:
+            s = 0
+            e = -1
+        else:
+            s = leg_limits[args.leg]
+            e = leg_limits[args.leg+1]
+        for p in data["supportingPoints"][s:e]:
             print("{},{}".format(p["longitude"], p["latitude"]), file=output_file)
     except KeyError as e:
         exit("Input file format wrong, key {} not found" + str(e))
