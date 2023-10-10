@@ -5,7 +5,7 @@ import math
 import re
 import sys
 
-PATTERN_PHRASE = [r"drivingassistance_adapter.*has matched position", r"NullMapMatcherImpl.*on road"]
+PATTERN_PHRASE = [r"drivingassistance_adapter.*has matched position", r"MapMatchedResult.*on road"]
 
 def setup_parser():
     # Setup CLI arguments
@@ -15,7 +15,7 @@ def setup_parser():
     parser.add_argument('--start', type=float, required=False, default=0.0, help='Packed ID of the first message')
     parser.add_argument('--end', type=float, required=False, default=10000.0, help='Packet ID of the last message')
     parser.add_argument('--plot', action='store_true', dest='plot')
-    parser.add_argument('--phrase-index', type=int, default=0, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
+    parser.add_argument('--phrase-index', type=int, default=0, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "MapMatchedResult.*OnFeedResult"]')
     return parser.parse_args()
     # autopep8: on
 
