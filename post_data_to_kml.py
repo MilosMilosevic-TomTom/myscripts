@@ -21,6 +21,13 @@ start_wp = '<Placemark><Point><coordinates>'
 end_wp = '</coordinates></Point></Placemark>'
 end = '</Folder></Folder></Folder></Document></kml>'
 
+
+def add_pin(lon, lat, name=None):
+    if name is not None:
+        return "<Placemark><Point><coordinates>{},{}</coordinates></Point><name>{}</name></Placemark>".format(lon, lat, name)
+    else:
+        return "<Placemark><Point><coordinates>{},{}</coordinates></Point></Placemark>".format(lon, lat)
+
 with open(args.input) as json_file:
     data = json.load(json_file)
     output_file = open(args.output, "w+")
@@ -52,9 +59,10 @@ with open(args.input) as json_file:
 
     print(close_line, file=output_file)
 
-    for l in leg_limits[1:]:
-        print(start_wp, file=output_file)
-        print("{},{}".format(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"]), file=output_file)
-        print(end_wp, file=output_file)
+    print(add_pin(data["supportingPoints"][0]["longitude"], data["supportingPoints"][0]["latitude"], "Start"), file=output_file)
+    print(add_pin(data["supportingPoints"][-1]["longitude"], data["supportingPoints"][-1]["latitude"], "End"), file=output_file)
+
+    for cnt, l in enumerate(leg_limits[1:]):
+        print(add_pin(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"], "Waypoint" + str(cnt+1)), file=output_file)
 
     print(end, file=output_file)
