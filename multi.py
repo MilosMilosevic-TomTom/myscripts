@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
-import argparse
+import argparse 
+import getpass
 import json
+import platform
 import subprocess
 import time
 
@@ -92,7 +94,7 @@ with open(args.input) as json_file:
     print(end, file=output_file)
     output_file.close()
 
-    cmd_args = ['/home/milosevi/workspace/routing-engine/build/bin/routing-cli',
+    cmd_args = ['/{}/{}/workspace/routing-engine/build/bin/routing-cli'.format('Users' if platform.system() == "Darwin" else 'home', getpass.getuser()),
                 '--job-type', 'PolylineReconstruction',
                 '--map', args.map,
                 '--keystore', args.keystore,
