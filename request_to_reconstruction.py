@@ -229,6 +229,7 @@ def setup_parser():
     parser.add_argument('--map', type=str, help="Map to be used for polyline reconstruction job")
     parser.add_argument('--keystore', type=str, help="Keystore file to be used if polyline reconstruction job is used")
     parser.add_argument('--prefix', type=str, default='', help="Potential prefix for kml files")
+    parser.add_argument('--truncate', type=int, default='0', help="Allows to truncate before execution for example for parital polyline resolving")
     args = parser.parse_args()
 
     if args.execute and (args.map is map or args.keystore is None):
@@ -263,7 +264,7 @@ with open(args.input) as json_file:
     if args.mode == "response":
         points = []
         try:
-            for leg in data["routes"][0]["legs"]:
+            for leg in data["routes"][args.route]["legs"]:
                 points.extend(leg["points"])
                 leg_limits.append(leg_limits[-1] + len(leg["points"]) - 1)
         except KeyError as e:
@@ -281,6 +282,11 @@ with open(args.input) as json_file:
         exit("Unknown mode {}, supported modes are 'post' and 'response'".format(args.mode))
 
     print(leg_limits)
+
+    if args.truncate != 0:
+      print("Truncated kml to {} points and dropped waypoints".format(args.truncate))
+      data["supportingPoints"] = data["supportingPoints"][0:args.truncate]
+      leg_limits = [0, args.truncate]
 
     if args.leg > len(leg_limits) - 2:
         exit("Input file contains {} legs while requested leg is {} (zero-based)".format(len(leg_limits)-1, args.leg))
