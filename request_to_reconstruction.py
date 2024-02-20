@@ -266,7 +266,7 @@ with open(args.input) as json_file:
         try:
             for leg in data["routes"][args.route]["legs"]:
                 points.extend(leg["points"])
-                leg_limits.append(leg_limits[-1] + len(leg["points"]) - 1)
+                leg_limits.append(leg_limits[-1] + len(leg["points"]))
         except KeyError as e:
             exit("Input file format wrong, key {} not found" + str(e))
 
@@ -308,6 +308,7 @@ with open(args.input) as json_file:
     print(add_pin(data["supportingPoints"][0]["longitude"], data["supportingPoints"][0]["latitude"], "Start"), file=output_file)
     print(add_pin(data["supportingPoints"][-1]["longitude"], data["supportingPoints"][-1]["latitude"], "End"), file=output_file)
     for cnt, l in enumerate(leg_limits[1:-1]):
+        print("Waypoint {}: {},{}".format(cnt+1, data["supportingPoints"][l]["latitude"], data["supportingPoints"][l]["longitude"]))
         print(add_pin(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"], "Waypoint" + str(cnt+1)), file=output_file)
 
     print(document_end, file=output_file)
