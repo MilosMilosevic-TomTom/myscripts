@@ -6,7 +6,7 @@ import re
 
 SEPARATOR = "\n\n----------------------------------------------------------------\n\n\n"
 ONLINE_REQ_REGEX = "SendOnlineRequest.*Route/"
-RECEIVING_ROUTE_REGEX = "Receiving.*online route"
+RECEIVING_ROUTE_REGEX = "Receiving \d* online route"
 RESOLVING_FAILED_PHRASE = "Polyline resolving failed for route"
 LOG_ROUTE_SUMMART_PHRASE = "LogRouteSummary"
 
