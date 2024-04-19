@@ -78,6 +78,7 @@ with open(args.input) as json_file:
     print(add_pin(data["supportingPoints"][-1]["longitude"], data["supportingPoints"][-1]["latitude"], "End"), file=output_file)
 
     for cnt, l in enumerate(leg_limits[1:-1]):
+        print("Waypoint {}: {},{}".format(cnt+1, data["supportingPoints"][l]["latitude"], data["supportingPoints"][l]["longitude"]))
         print(add_pin(data["supportingPoints"][l]["longitude"], data["supportingPoints"][l]["latitude"], "Waypoint" + str(cnt+1)), file=output_file)
 
     print(end, file=output_file)
