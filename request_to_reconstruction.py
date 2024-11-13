@@ -226,6 +226,7 @@ def setup_parser():
     parser.add_argument('--route', '-r', type=int, default=0, help="In case there are multiple routes")
     parser.add_argument('--mode', '-m', type=str, default="post", help="Switch between post data and response data")
     parser.add_argument('--execute', '-e', type=str, help="Path to the routing-cli executable to execute polyline reconstruction job")
+    parser.add_argument('--job', '-j', type=str, default='PolylineReconstruction', help="routing-cli job type")
     parser.add_argument('--map', type=str, help="Map to be used for polyline reconstruction job")
     parser.add_argument('--keystore', type=str, help="Keystore file to be used if polyline reconstruction job is used")
     parser.add_argument('--prefix', type=str, default='', help="Potential prefix for kml files")
@@ -317,7 +318,7 @@ with open(args.input) as json_file:
 
     if args.execute:
         cmd_args = [args.execute,
-            '--job-type', 'PolylineReconstruction',
+            '--job-type', args.job,
             '--map', args.map,
             '--keystore', args.keystore,
             '--output-dir', '/tmp/out',
