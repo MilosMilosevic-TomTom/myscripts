@@ -79,10 +79,11 @@ def setup_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", '-o', type=str, required=True, help='Output TTP file name')
     parser.add_argument("--input", '-i', type=str, required=True, help='Input esotrace file name')
-    parser.add_argument('--start', '-s', type=float, required=False, default=0.0, help='Packed ID of the first message')
-    parser.add_argument('--end', '-e', type=float, required=False, default=10000.0, help='Packet ID of the last message')
-    parser.add_argument('--kml', action='store_true', dest='kml')
-    parser.add_argument('--phrase-index', type=int, default=2, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
+    parser.add_argument("--start", '-s', type=float, required=False, default=0.0, help='Packed ID of the first message')
+    parser.add_argument("--end", '-e', type=float, required=False, default=10000.0, help='Packet ID of the last message')
+    parser.add_argument("--ignore-packet-id", action='store_true', dest='ignore_pid')
+    parser.add_argument("--kml", action='store_true', dest='kml')
+    parser.add_argument("--phrase-index", type=int, default=2, dest='phrase', help='Supported phrases for now ["Track.MapMatched", "NullMapMatcherImpl.*OnFeedResult"]')
     return parser.parse_args()
     # autopep8: on
 
@@ -110,11 +111,12 @@ struct = None
 for line in input_file:
     if re.search(PATTERN_PHRASE[args.phrase], line):
 
-        packet_id = float(line[0:line.find(" ")])
-        if packet_id > args.end:
-            break
-        if packet_id < args.start:
-            continue
+        if not(args.ignore_pid):
+            packet_id = float(line[0:line.find(" ")])
+            if packet_id > args.end:
+                break
+            if packet_id < args.start:
+                continue
 
         struct = process_MM_line(line, args.phrase, struct)
         output_file.write(output_klm(struct) if args.kml else output_ttp(struct, current_step))
