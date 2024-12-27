@@ -234,8 +234,8 @@ def setup_parser():
     args = parser.parse_args()
 
     if args.execute and (args.map is map or args.keystore is None):
-      parser.error("Execute cannot be called without a map or without a keystore file")
-    
+        parser.error("Execute cannot be called without a map or without a keystore file")
+
     return args
     # autopep8: on
 
@@ -253,7 +253,7 @@ def add_pin(lon, lat, name=None):
 def add_leg(output_file, points, start, end, index):
     print("<Folder><name>leg_{}</name><Placemark><name>path</name><styleUrl>#s{}</styleUrl><LineString><coordinates>".format(index, index), file=output_file)
     for p in points[start:end]:
-            print("{},{}".format(p["longitude"], p["latitude"]), file=output_file)
+        print("{},{}".format(p["longitude"], p["latitude"]), file=output_file)
     print("</coordinates></LineString></Placemark></Folder>", file=output_file)
 
 with open(args.input) as json_file:
@@ -285,9 +285,9 @@ with open(args.input) as json_file:
     print(leg_limits)
 
     if args.truncate != 0:
-      print("Truncated kml to {} points and dropped waypoints".format(args.truncate))
-      data["supportingPoints"] = data["supportingPoints"][0:args.truncate]
-      leg_limits = [0, args.truncate]
+        print("Truncated kml to {} points and dropped waypoints".format(args.truncate))
+        data["supportingPoints"] = data["supportingPoints"][0:args.truncate]
+        leg_limits = [0, args.truncate]
 
     if args.leg > len(leg_limits) - 2:
         exit("Input file contains {} legs while requested leg is {} (zero-based)".format(len(leg_limits)-1, args.leg))
@@ -318,21 +318,21 @@ with open(args.input) as json_file:
 
     if args.execute:
         cmd_args = [args.execute,
-            '--job-type', args.job,
-            '--map', args.map,
-            '--keystore', args.keystore,
-            '--output-dir', '/tmp/out',
-            '--save-search-space-kml', '--save-result-kml',
-            '--reference-route', args.output] + (['--output-name-prefix', args.prefix] if args.prefix != '' else [])
+                    '--job-type', args.job,
+                    '--map', args.map,
+                    '--keystore', args.keystore,
+                    '--output-dir', '/tmp/out',
+                    '--save-search-space-kml', '--save-result-kml',
+                    '--reference-route', args.output] + (['--output-name-prefix', args.prefix] if args.prefix != '' else [])
 
         if args.leg == -1:
             cmd_args += [
                 '--origin', str(data["supportingPoints"][0]["latitude"]), str(data["supportingPoints"][0]["longitude"]),
                 '--destination', str(data["supportingPoints"][-1]["latitude"]), str(data["supportingPoints"][-1]["longitude"])]
             if len(leg_limits) > 2:
-              cmd_args += ['--waypoints']
-              for l in leg_limits[1:-1]:
-                  cmd_args += [str(data["supportingPoints"][l]["latitude"]), str(data["supportingPoints"][l]["longitude"])]
+                cmd_args += ['--waypoints']
+                for l in leg_limits[1:-1]:
+                    cmd_args += [str(data["supportingPoints"][l]["latitude"]), str(data["supportingPoints"][l]["longitude"])]
         else:
             cmd_args += [
                 '--origin', str(data["supportingPoints"][leg_limits[args.leg]]["latitude"]), str(data["supportingPoints"][leg_limits[args.leg]]["longitude"]),
@@ -344,3 +344,4 @@ with open(args.input) as json_file:
 
         print(result.stdout)
         print(result.stderr)
+
