@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+import polyline
 
 style = '''
     <Style id="s0">
@@ -256,6 +257,13 @@ def add_leg(output_file, points, start, end, index):
         print("{},{}".format(p["longitude"], p["latitude"]), file=output_file)
     print("</coordinates></LineString></Placemark></Folder>", file=output_file)
 
+def encoded_to_supportingPoints(data):
+    polyline_data = data["encodedPolyline"]
+    polyline_precision = data["encodedPolylinePrecision"]
+    decoded = polyline.decode(polyline_data, polyline_precision)
+    converted_coordinates = [{"latitude": lat, "longitude": lon} for lat, lon in decoded]
+    return converted_coordinates
+
 with open(args.input) as json_file:
     data = json.load(json_file)
     output_file = open(args.output, "w+")
@@ -266,7 +274,8 @@ with open(args.input) as json_file:
         points = []
         try:
             for leg in data["routes"][args.route]["legs"]:
-                points.extend(leg["points"])
+                points.extend(leg["points"] if "points" in leg else polyline.decode(leg[["encodedPolyline"]], leg["encodedPolylinePrecision"]))
+                print(points)
                 leg_limits.append(leg_limits[-1] + len(leg["points"]))
         except KeyError as e:
             exit("Input file format wrong, key {} not found" + str(e))
@@ -276,9 +285,15 @@ with open(args.input) as json_file:
         points = []
         if "legs" in data:
             for leg in data["legs"]:
+                if "encodedPolyline" in leg:
+                    leg["supportingPoints"] = encoded_to_supportingPoints(leg)
                 points.extend(leg["supportingPoints"])
                 leg_limits.append(leg_limits[-1] + len(leg["supportingPoints"]))
             data["supportingPoints"] = points
+        elif "encodedPolyline" in data:
+            # Encoded polyline per route
+            data["supportingPoints"] = encoded_to_supportingPoints(data)
+            leg_limits.append(len(data["supportingPoints"])-1)
         else:
             try:
                 for w in data["pointWaypoints"]:
