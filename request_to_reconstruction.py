@@ -273,12 +273,19 @@ with open(args.input) as json_file:
 
         data["supportingPoints"] = points
     elif args.mode == "post":
-        try:
-            for w in data["pointWaypoints"]:
-                leg_limits.append(w["supportingPointIndex"])
-        except KeyError as e:
-            pass
-        leg_limits.append(len(data["supportingPoints"])-1)
+        points = []
+        if "legs" in data:
+            for leg in data["legs"]:
+                points.extend(leg["supportingPoints"])
+                leg_limits.append(leg_limits[-1] + len(leg["supportingPoints"]))
+            data["supportingPoints"] = points
+        else:
+            try:
+                for w in data["pointWaypoints"]:
+                    leg_limits.append(w["supportingPointIndex"])
+            except KeyError as e:
+                pass
+            leg_limits.append(len(data["supportingPoints"])-1)
     else:
         exit("Unknown mode {}, supported modes are 'post' and 'response'".format(args.mode))
 
