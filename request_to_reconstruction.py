@@ -232,6 +232,7 @@ def setup_parser():
     parser.add_argument('--keystore', type=str, help="Keystore file to be used if polyline reconstruction job is used")
     parser.add_argument('--prefix', type=str, default='', help="Potential prefix for kml files")
     parser.add_argument('--truncate', type=int, default='0', help="Allows to truncate before execution for example for parital polyline resolving")
+    parser.add_argument('--print', '-p', action='store_true', help="Print supporting points to std")
     args = parser.parse_args()
 
     if args.execute and (args.map is map or args.keystore is None):
@@ -274,8 +275,9 @@ with open(args.input) as json_file:
         points = []
         try:
             for leg in data["routes"][args.route]["legs"]:
-                points.extend(leg["points"] if "points" in leg else polyline.decode(leg[["encodedPolyline"]], leg["encodedPolylinePrecision"]))
-                print(points)
+                if "encodedPolyline" in leg:
+                    leg["points"] = encoded_to_supportingPoints(leg)
+                points.extend(leg["points"])
                 leg_limits.append(leg_limits[-1] + len(leg["points"]))
         except KeyError as e:
             exit("Input file format wrong, key {} not found" + str(e))
@@ -290,11 +292,9 @@ with open(args.input) as json_file:
                 points.extend(leg["supportingPoints"])
                 leg_limits.append(leg_limits[-1] + len(leg["supportingPoints"]))
             data["supportingPoints"] = points
-        elif "encodedPolyline" in data:
-            # Encoded polyline per route
-            data["supportingPoints"] = encoded_to_supportingPoints(data)
-            leg_limits.append(len(data["supportingPoints"])-1)
         else:
+            if "encodedPolyline" in data:
+                data["supportingPoints"] = encoded_to_supportingPoints(data)
             try:
                 for w in data["pointWaypoints"]:
                     leg_limits.append(w["supportingPointIndex"])
@@ -305,6 +305,8 @@ with open(args.input) as json_file:
         exit("Unknown mode {}, supported modes are 'post' and 'response'".format(args.mode))
 
     print(leg_limits)
+    if args.print:
+        print(data["supportingPoints"])
 
     if args.truncate != 0:
         print("Truncated kml to {} points and dropped waypoints".format(args.truncate))
